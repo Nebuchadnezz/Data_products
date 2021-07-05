@@ -1,0 +1,70 @@
+---
+title: "Cyclistic_plotly"
+author: "Corey Neff"
+date: "7/5/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Instructions 
+
+Create a web page presentation using R Markdown that features a plot created with Plotly. Host your webpage on either GitHub Pages, RPubs, or NeoCities. Your webpage must contain the date that you created the document, and it must contain a plot created with Plotly. 
+
+## Loading the data
+
+Here I am, again, loading the "Cyclistic" dataset provided by Google. It is 12 separate CSVs, one for each month, containing geocoded data for bike-share usage in Chicago. For the Plotly visualizations, I will be using the **ggplotly()** function as it is easier to work with ggplot2.
+
+
+```{r data, warning = F}
+librarian::shelf(dplyr, purrr, data.table, lubridate, ggplot2, plotly)
+
+mydata <- do.call(rbind, lapply(list.files(pattern="*.csv"), fread))
+
+
+mydata <- mydata %>% 
+      select(-c(ride_id, start_station_name, end_station_name)) %>%
+      mutate(ride_length = as.numeric(ended_at-started_at),
+             ended_at = ymd_hms(ended_at),
+             started_at = ymd_hms(started_at),
+             day = factor(weekdays(started_at), c("Monday", "Tuesday", "Wednesday", "Thursday","Friday", "Saturday", "Sunday")),
+             member_casual = as.factor(stringr::str_to_title(member_casual)))
+
+mydata$ride_length <- replace(mydata$ride_length, which(mydata$ride_length < 0), NA)
+
+summary(mydata)
+
+```
+
+## First Plot: Ride_length
+
+This graph shows a histogram of ride length in seconds with respect to the member category. As you can see, non-members ("casual") tend to ride for a longer length of time.
+
+```{r Ride_length, warning=F, message=F}
+ggplotly(
+   ggplot(data = mydata) +
+      geom_histogram(aes(x=ride_length, fill = member_casual))+
+      xlim(0,5000) +
+      labs(fill = "Casual User or Member?") +
+      xlab("Ride Length (s)") +
+      ggtitle(("Histogram of Ride Length by Member Status")) +
+      theme_bw()
+)
+```
+
+## Second Plot: Day of the week
+
+This graph shows the dsitribution of the average # of rides per day of the week with respect to the member category. As you can see, member bike usage is less dependent of the day, while non-member usage is focused on the weekends.
+
+```{r Day, warning = F, message=F}
+
+ggplotly(
+   ggplot(mydata) +
+      geom_bar(aes(x=day, fill = member_casual), position = 'dodge')+
+      labs(fill = "Casual User or Member?") +            
+      xlab("Day of the Week") +
+      ggtitle(("Frequencies of Weekday Usage by Member Status")) +
+      theme_bw()
+)
