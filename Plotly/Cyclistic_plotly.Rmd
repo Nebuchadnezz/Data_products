@@ -2,7 +2,7 @@
 title: "Cyclistic_plotly"
 author: "Corey Neff"
 date: "7/5/2021"
-output: html_document
+output: slidy_presentation
 ---
 
 ```{r setup, include=FALSE}

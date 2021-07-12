@@ -1,0 +1,139 @@
+---
+title: "App Pitch"
+author: "Corey Neff"
+date: "7/8/2021"
+output: slidy_presentation
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## The Instructions
+
+This simple RMarkdown presentatio was created as the final assignment for the Creating Data Products Coursera course. Here I will be pitching the app I created, which can be found [HERE](https://nebuchadnezz.shinyapps.io/Cyclistic_App/).
+
+**Requirements:**
+
+- It must be done in Slidify or Rstudio Presenter
+
+- It must be 5 pages
+
+- It must be hosted on github or Rpubs
+
+- It must contained some embedded R code that gets run when slidifying the document
+
+## The Problem
+
+*Cyclistic* is a fictional bike-sharing company based in Chicago, IL, and they have one question: 
+
+- How do members differ from non-members in their usage of the bikes?
+
+To answer this question, a number of visuals (including both graphs and a map) were created to show how members and casual users differ.
+
+## Sample Graph
+
+```{r sample, message=F, warning = F}
+
+
+library(librarian)
+shelf(dplyr, ggplot2, plotly)
+set.seed(69)
+
+mydata <- readRDS(file = "data.rds")
+ggplotly(ggplot(mydata) +
+            geom_histogram(aes(x=ride_length, fill = member_casual)) +
+            xlim(0, 10000) +
+            labs(fill = "Member Status?") +            
+            xlab("Length of Time (s)") +
+            ggtitle(paste("Distribution of","Length of Time (s)"," by Member Status")) +
+            theme_bw())
+```
+
+## The App
+
+Here, the second tab of the app can be found. To use the app, please visit the webpage listed earlier.
+
+```{r APP, echo = F, message=F, warning = F}
+
+library(librarian)
+shelf(dplyr, ggplot2, plotly, leaflet, shiny)
+set.seed(69)
+
+mydata <- readRDS(file = "data.rds")
+
+shinyApp(
+
+ui <- fluidPage(theme = shinythemes::shinytheme("yeti"),
+    navbarPage(
+        title = "Google's Cyclistic Data Shiny App",
+        theme = shinythemes::shinytheme("yeti"),
+        
+        tabPanel("Plots",
+                 sidebarPanel(
+                     tags$h3("Which variable?"),
+                     selectInput("variable_cont", "Choices (continuous):",
+                                 choices = list("Ride Length (s)" = "length",
+                                                "Ride Distance (m) " = "dist"
+                                 )),
+                     selectInput("variable_cat", "Choices (discrete):",
+                                 choices = list("Day of the Week" = "weekday",
+                                                "Type of Bike" = "type"
+                                 ))
+                 ), 
+                 mainPanel(
+                     plotly::plotlyOutput("plot1", width = "90%"),
+                     plotly::plotlyOutput("plot2", width = "90%")
+                 ) 
+                 
+        )
+    ) 
+), 
+
+server <- function(input, output, session) {
+    
+output$plot1 <- renderPlotly(
+    
+    if(input$variable_cont == "length"){
+ggplotly(ggplot(mydata) +
+            geom_histogram(aes(x=ride_length, fill = member_casual)) +
+            xlim(0, 10000) +
+            labs(fill = "Member Status?") +            
+            xlab("Length of Time (s)") +
+            ggtitle(paste("Distribution of","Length of Time (s)"," by Member Status")) +
+            theme_bw())
+    }
+    else{
+ggplotly(ggplot(mydata) +
+            geom_histogram(aes(x=distance, fill = member_casual)) +
+            xlim(0, 10000) +
+            labs(fill = "Member Status?") +            
+            xlab("Distance (m)") +
+            ggtitle(paste("Distribution of ","Distance (m)","by Member Status")) +
+            theme_bw())
+    }           
+)
+
+output$plot2 <- renderPlotly(     
+    
+    if(input$variable_cat== "weekday"){
+        
+    ggplotly(ggplot(mydata) +
+        geom_bar(aes(x=day, fill = member_casual), position = "dodge") +
+        labs(fill = "Member Status?") +            
+        xlab("Day of the Week") +
+        ggtitle(paste("Distribution of","Weekday Usage"," by Member Status")) +
+        theme_bw())
+    }
+    else{
+        ggplotly(ggplot(mydata) +
+            geom_bar(aes(x=rideable_type, fill = member_casual), position = "dodge") +
+            labs(fill = "Member Status?") +            
+            xlab("Rideable Type") +
+            ggtitle(paste("Distribution of","Rideable Type"," by Member Status")) +
+            theme_bw())
+    }
+)
+},   options = list(height = 200)
+)
+```
